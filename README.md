@@ -1,2 +1,2 @@
 # cats-effects-playground
-Cats Effects playgound - following the Rock The JVM course
+Cats Effects playground - following the Rock The JVM course
