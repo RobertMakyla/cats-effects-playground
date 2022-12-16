@@ -38,7 +38,7 @@ object Part1_Effects extends App {
     //tip if you want to keep it lazy, start with MyIO( () => ...
     def flatMap[B](f: A => MyIO[B]): MyIO[B] =
       MyIO(() => f(unsafeRun()).unsafeRun())
-    //this has a correct type but the calculation is done immediately !! that's WRONG:   f(unsafeRun())
+    //f(unsafeRun()) - this has a correct type but the calculation is done immediately !! that's WRONG
 
     def unit[B](b: B): MyIO[B] = MyIO(() => b)
 
