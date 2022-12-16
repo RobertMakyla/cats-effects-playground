@@ -39,6 +39,7 @@ object Part1_Effects extends App {
     def flatMap[B](f: A => MyIO[B]): MyIO[B] =
       MyIO(() => f(unsafeRun()).unsafeRun())
     //f(unsafeRun()) - this has a correct type but the calculation is done immediately !! that's WRONG
+    //so if you want a lazy flatMap, just building a structure of events (not executing it) you need to start the implementation with MyIO( () => <sth> )
 
     def unit[B](b: B): MyIO[B] = MyIO(() => b)
 
@@ -68,7 +69,7 @@ object Part1_Effects extends App {
 
   val six: Int = resultNotComputedYet.unsafeRun()
 
-  println("result: " + six)
+  println("2 + 2 + 2 = " + six)
 
 
   /**
@@ -79,8 +80,15 @@ object Part1_Effects extends App {
    * 4 An IO which reads a line (a string) from the std input
    */
 
-  // 1
+  // 1 - the current time of the system
   val clock: MyIO[Long] = MyIO(() => System.currentTimeMillis())
 
-  //teraz minuta 3:49 exercises
+  // 2 - measures the duration of a computation
+  def durationMillisOf[A](computation: MyIO[A]): MyIO[Long] = for {
+    start <- clock
+    _ <- computation
+    end <- clock
+  } yield (end - start)
+
+  println("durationMillis: " + durationMillisOf(resultNotComputedYet).unsafeRun() )
 }
