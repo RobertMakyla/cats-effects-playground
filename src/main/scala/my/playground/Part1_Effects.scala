@@ -69,7 +69,7 @@ object Part1_Effects extends App {
 
   val six: Int = resultNotComputedYet.unsafeRun()
 
-  println("2 + 2 + 2 = " + six)
+  println("result of 2 + 2 + 2 is " + six)
 
 
   /**
@@ -90,5 +90,19 @@ object Part1_Effects extends App {
     end <- clock
   } yield (end - start)
 
-  println("durationMillis: " + durationMillisOf(resultNotComputedYet).unsafeRun() )
+  println("duration of 100 ms calculation: " + durationMillisOf(MyIO(() => Thread.sleep(100))).unsafeRun() )
+
+  // 3 - IO printing a line
+  def putStrLine(s: String): MyIO[Unit] = MyIO(() => println(s))
+
+  // 4 - IO reading a line
+  def readLine : MyIO[String] = MyIO(() => scala.io.StdIn.readLine())
+
+  val greeting: MyIO[Unit] = for {
+    _ <- putStrLine("what's your name?")
+    name <- readLine
+    _ <- putStrLine(s"hello, $name !!!")
+  } yield ()
+
+  println("greeting test: " + greeting.unsafeRun())
 }
