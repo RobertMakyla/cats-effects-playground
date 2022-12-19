@@ -61,9 +61,11 @@ object Part3_IO_ErrorHandling {
 
   def handleIOError[A](io: IO[A])(handler: Throwable => A): IO[A] =
     io.redeem(handler, identity)
+//  io.handleError(handler)
 
   def handleIOErrorWith[A](io: IO[A])(handler: Throwable => IO[A]): IO[A] =
-    io.redeemWith(handler, IO.pure)
+//  io.redeemWith(handler, IO.pure)
+    io.handleErrorWith(handler)
 
   def main(args: Array[String]): Unit = {
     import cats.effect.unsafe.implicits.global
