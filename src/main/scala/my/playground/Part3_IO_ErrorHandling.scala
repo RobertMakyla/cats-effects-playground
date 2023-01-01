@@ -10,7 +10,7 @@ object Part3_IO_ErrorHandling {
   val aFailedCompute: IO[Int] = IO.delay(throw new RuntimeException("A FAILURE")) // lazy  - throws exception at unsafeRunSync()
   val aFailure: IO[Int] = IO.raiseError(new RuntimeException("a proper fail")) // same result but more elegant - declaring explicitly instead of throwing/catching
 
-  // handle exceptions
+  // handle (some particular/chosen) exceptions
 
   val dealWithIt = aFailure.handleErrorWith {
     case _: RuntimeException => IO.delay(println("I'm still here"))
