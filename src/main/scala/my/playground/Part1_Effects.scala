@@ -5,7 +5,7 @@ object Part1_Effects extends App {
   /**
    * In Functional Programming we rely on Referential Transparency -
    *
-   * we can replace each expression with a value I returns
+   * we can replace each expression with a value it returns
    * and we can be sure this time the value will also be the same - It won't change our app.
    *
    * Referential Transparency requires PURE FUNCTIONS ( no side effects )

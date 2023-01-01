@@ -35,24 +35,11 @@ object Part2_IO {
   import cats.syntax.apply._
   val ioCombined: IO[Int] = (ioInt, ioMapped).mapN(_ + _)
 
+  /**
+   * Exercise: write a one-liner program that reads 2 lines of strings (one by one), combines the strings and then prints it out.
+   */
   def smallProgram_v2(): IO[Unit] =
-    (IO(StdIn.readLine()), IO(StdIn.readLine())).mapN(_ + _).map(println)
-
-  def main(args: Array[String]): Unit = {
-    import cats.effect.unsafe.implicits.global // platform of Cats Effects
-
-//    greeting.unsafeRunSync()
-//    forever(IO {println("forever with flatMap"); Thread.sleep(123)}).unsafeRunSync()
-//    forever_v2(IO {println("forever with >> "); Thread.sleep(123)}).unsafeRunSync()
-//    forever_stack_overflow(IO {println("forever_stack_overflow"); Thread.sleep(123)}).unsafeRunSync()
-//    foreverM(IO {println("foreverM"); Thread.sleep(123)}).unsafeRunSync()
-
-//    sum_stack_overflow(20000)
-//    println(sumIO(20000).unsafeRunSync())
-
-    (1 to 33).foreach { i => println(i + ", fibonacci with IO.defer = " + fibonacci_defer(i).unsafeRunSync()) }
-    (1 to 33).foreach { i => println(i + ", fibonacci with flatMap  = " + fibonacci_flatMap(i).unsafeRunSync()) }
-  }
+    (IO(scala.io.StdIn.readLine()), IO(scala.io.StdIn.readLine())).mapN(_ + _).map(println)
 
   /**
    * Exercises
@@ -65,8 +52,10 @@ object Part2_IO {
 
   def sequenceTakeLast[A, B](ioa: IO[A], iob: IO[B]): IO[B] = {
     // ioa *> iob  // 'andThen' called by value - NOT suitable for recursion.
+    //            // '*>' is not running the IO (unsafeRun) but it is evaluating the effect immediately, so when it's in recursion it will give
     //ioa >> iob // 'andThen' called by name (lazy) - suitable for recursion.
-      ioa.flatMap(_ => iob) // flatMap is also EVALUATED LAZILY - jsut like '>>' - suitable for recursion
+    //          // '>>' is not even evaluating the effect (not touching it)
+      ioa.flatMap(_ => iob) // flatMap is also EVALUATED LAZILY - just like '>>' - suitable for recursion
   }
 
   // 2 - sequence two IOs and take the result of the FIRST one
@@ -112,7 +101,7 @@ object Part2_IO {
     ioa.void // most elegant
   }
 
-  // 6 - fix stack recursion - so that it doesn't crash with big numbers (like tail rec, in oryginal scala)
+  // 6 - fix stack recursion - so that it doesn't crash with big numbers (like tail rec, in original scala)
   //   old way: def sum(n: Int): Int = if (n <= 0) 0 else n + sum(n - 1)
   //
   //   def sumIO(n: Int): IO[Int] = ???
@@ -124,9 +113,9 @@ object Part2_IO {
       IO.pure(0)
     else
       for { // flatMap is STACK-SAFE so it will not give stack overflow
-        n <- IO.pure(n)
+        theN <- IO.pure(n)
         sum <- sumIO(n - 1)
-      } yield n + sum
+      } yield theN + sum
 
   // 7 (hard) - write a fibonacci IO that does NOT crash on recursion
   // hints: use recursion, ignore exponential complexity, use flatMap heavily
@@ -165,4 +154,20 @@ object Part2_IO {
    * IO.defer[A](ioa: => IO[A]): IO[A]   Suspends (in IO) a synchronous side effect which produces an IO[A].
    *                                     It's like IO.delay(..).flatten
    */
+
+  def main(args: Array[String]): Unit = {
+    import cats.effect.unsafe.implicits.global // platform of Cats Effects
+
+    //    greeting.unsafeRunSync()
+    //    forever(IO {println("forever with flatMap"); Thread.sleep(123)}).unsafeRunSync()
+    //    forever_v2(IO {println("forever with >> "); Thread.sleep(123)}).unsafeRunSync()
+    //    forever_stack_overflow(IO {println("forever_stack_overflow"); Thread.sleep(123)}).unsafeRunSync()
+    //    foreverM(IO {println("foreverM"); Thread.sleep(123)}).unsafeRunSync()
+
+//        sum_stack_overflow(20000)
+    //    println(sumIO(20000).unsafeRunSync())
+
+//    (1 to 33).foreach { i => println(i + ", fibonacci with IO.defer = " + fibonacci_defer(i).unsafeRunSync()) }
+//    (1 to 33).foreach { i => println(i + ", fibonacci with flatMap  = " + fibonacci_flatMap(i).unsafeRunSync()) }
+  }
 }
