@@ -19,32 +19,38 @@ object Part5_IO_Parallelism extends IOApp.Simple {
   val ioInt: IO[Int] = IO.delay(42)
   val ioString: IO[String] = IO.delay("Scala")
   val combinedIoIntAndString =
-    (ioInt.debug, ioString.debug).mapN((num, string) => s"my goal in life is $num and $string") // also sequentially and on the same thread
+    (ioInt.debug, ioString.debug).mapN((num, string) => s"my goal in life is $num and $string")
 
-  // parallelism on IOs
-  // convert a sequential IO to parallel IO
+  /*
+   mapN on sequential IOs
+    - evaluates all IOs one by one on ONE Thread, then finally the result also in the same Thread
+   */
+
+  // Parallel IO (converted from sequential IO)
   val parIO1: IO.Par[Int] = Parallel[IO].parallel(ioInt.debug)
   val parIO2: IO.Par[String] = Parallel[IO].parallel(ioString.debug)
 
   import cats.effect.implicits._
   val parallelIO: IO.Par[String] = (parIO1, parIO2).mapN((num, string) => s"my goal in life is $num and $string")
 
+  /*
+   mapN on parallel IOs
+   - evaluates all IOs at once in DIFFERENT Threads, then finally the result in yet another Thread
+   */
+
   // turn back to sequential
-  val parallelIOBackToSeq: IO[String] = Parallel[IO].sequential(parallelIO) // evaluated on 3 threads, then results are back here in IO[String]
+  val parallelIOFromSeqIO: IO[String] = Parallel[IO].sequential(parallelIO) // // 3 different threads
 
   // shorter parallel:
   import cats.syntax.parallel._
-  val parallelIOBackToSeq_v2: IO[String] = (ioInt.debug, ioString.debug).parMapN((num, string) => s"my goal in life is $num and $string")
+  val parallelIOBuiltIn: IO[String] = (ioInt.debug, ioString.debug).parMapN((num, string) => s"my goal in life is $num and $string") // 3 different threads
 
   // failure in parallelism :
   val aFailure: IO[String] = IO.raiseError(new RuntimeException("I can't do this!"))
   val anotherFailure: IO[String] = IO.raiseError(new RuntimeException("Second failure"))
 
-  // compose success + failure
-  val parallelWithFailure = (ioInt.debug, aFailure.debug).parMapN((num, string) => s"$num $string")
-
-  // compose failure + failure
-  val twoFailures: IO[String] = (aFailure.debug, anotherFailure.debug).parMapN(_ + _)
+  // compose success + failure - gives first failure
+  val parallelWithFailure: IO[String] = (ioInt.debug, aFailure.debug).parMapN((num, string) => s"$num $string")
 
   // the first effect to fail gives the failure of the result
   val twoFailuresDelayed: IO[String] = (IO(Thread.sleep(100)) >> aFailure.debug, anotherFailure.debug).parMapN(_ + _)
@@ -52,8 +58,9 @@ object Part5_IO_Parallelism extends IOApp.Simple {
 
   override def run: IO[Unit] =
     //composedIO.map(println)
-//    combinedIoIntAndString.void
-//    parallelIOBackToSeq.debug.void
-//    parallelIOBackToSeq_v2.debug.void
-    twoFailuresDelayed.debug.void
+   // combinedIoIntAndString.debug.void
+   // parallelIOFromSeqIO.debug.void
+   // parallelIOBuiltIn.debug.void
+   // parallelWithFailure.debug.void
+      twoFailuresDelayed.debug.void
 }
