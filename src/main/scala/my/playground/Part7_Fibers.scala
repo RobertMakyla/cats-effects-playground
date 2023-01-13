@@ -6,6 +6,7 @@ import cats.effect.{Fiber, FiberIO, IO, IOApp, Outcome}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
+
 /**
  * FIBER - a basic class of IO concurrency - Incredibly lightweight
  */
@@ -60,7 +61,7 @@ object Part7_Fibers extends IOApp.Simple {
     val task: IO[String] = IO("starting").debug >> IO.sleep(1.second) >> IO("done").debug
     // onCancel is a "finalizer", allowing you to free up resources in case you get canceled
     val taskWithCancellationHandler = task.onCancel(IO("someone is cancelling me :(").debug.void) //  IO.onCancel
-                                                                                                // - will be returned in case of cancelling fiber with this IO
+    // - will be returned in case of cancelling fiber with this IO
 
     for {
       fib <- taskWithCancellationHandler.start // on a separate thread
@@ -78,49 +79,50 @@ object Part7_Fibers extends IOApp.Simple {
    */
 
   def processResultsFromFiber[A](io: IO[A]): IO[A] = {
-    val myOutcome = for{
+    val myOutcome = for {
       fib <- io.start
       outcome <- fib.join
     } yield outcome
 
     myOutcome flatMap {
-      case Succeeded(x) => x
+      case Succeeded(effect) => effect
       case Canceled() => IO.raiseError(new RuntimeException("it's Canceled."))
-      case Errored(e) => IO.raiseError(new RuntimeException("it's Errored: "+ e.getMessage))
+      case Errored(e) => IO.raiseError(new RuntimeException("it's Errored: " + e.getMessage))
     }
   }
 
   def testEx1() = {
-//    val aComputation = IO("starting").debug >> IO.sleep(1.second) >> IO("done!").debug >> IO(42)
-//    processResultsFromFiber(aComputation).void
+    val aComputation = IO("starting").debug >> IO.sleep(1.second) >> IO("done!").debug >> IO(42)
+    processResultsFromFiber(aComputation).void
   }
 
   /**
    * Exercises:
    * 2. Write a function that takes two IOs, runs them on different fibers and returns an IO with a tuple containing both results.
-     *    - if both IOs complete successfully, tuple their results
-     *    - if the first IO returns an error, raise that error (ignoring the second IO's result/error)
-     *    - if the first IO doesn't error but second IO returns an error, raise that error
-     *    - if one (or both) canceled, raise a RuntimeException
-     *
+   *    - if both IOs complete successfully, tuple their results
+   *    - if the first IO returns an error, raise that error (ignoring the second IO's result/error)
+   *    - if the first IO doesn't error but second IO returns an error, raise that error
+   *    - otherwise (if either of them is cancelled), raise a RuntimeException
+   *
    */
   def tupleIOs[A, B](ioa: IO[A], iob: IO[B]): IO[(A, B)] = {
-    val result = for {
-      fiba <- ioa.start
-      fibb <- iob.start
-      resulta <- fiba.join
-      resultb <- fibb.join
-    } yield (resulta, resultb)
+    val myOutcomes: IO[(Outcome[IO, Throwable, A], Outcome[IO, Throwable, B])] = for {
+      fibA <- ioa.start
+      fibB <- iob.start
+      outA <- fibA.join
+      outB <- fibB.join
+    } yield (outA, outB)
 
-    result.flatMap {
-      case (Succeeded(fa), Succeeded(fb)) => for {
-        a <- fa
-        b <- fb
+    myOutcomes.flatMap {
+      case (Succeeded(aEffect: IO[A]), Succeeded(bEffect: IO[B])) => for {
+        a <- aEffect
+        b <- bEffect
       } yield (a, b)
-      case (Errored(e), _) => IO.raiseError(e)
-      case (_, Errored(e)) => IO.raiseError(e)
+      case (Errored(aErr), Succeeded(_)) => IO.raiseError(aErr)
+      case (Succeeded(_), Errored(bErr)) => IO.raiseError(bErr)
       case _ => IO.raiseError(new RuntimeException("Some computation canceled."))
     }
+
   }
 
   def testEx2() = {
@@ -137,7 +139,7 @@ object Part7_Fibers extends IOApp.Simple {
    *    - the method returns an IO[A] which contains
    *      - the original value if the computation is successful before the timeout signal
    *      - the exception if the computation is failed before the timeout signal
-   *      - a RuntimeException if it times out (i.e. cancelled by the timeout)   */
+   *      - a RuntimeException if it times out (i.e. cancelled by the timeout) */
 
   def timeout[A](io: IO[A], duration: FiniteDuration): IO[A] = {
     val computation = for {
@@ -159,7 +161,9 @@ object Part7_Fibers extends IOApp.Simple {
   }
 
   override def run =
-    //testEx3()
-    testCancel().debug.void
+  //testCancel().debug.void
+  //testEx1()
+    testEx2()
+  //testEx3()
 
 }
