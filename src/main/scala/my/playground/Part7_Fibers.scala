@@ -144,9 +144,9 @@ object Part7_Fibers extends IOApp.Simple {
   def timeout[A](io: IO[A], duration: FiniteDuration): IO[A] = {
     val computation = for {
       fib <- io.start
-      _ <- (IO.sleep(duration) >> fib.cancel).start // careful - fibers can leak
-      result <- fib.join
-    } yield result
+      _ <- (IO.sleep(duration) >> fib.cancel).start // careful - fibers can leak if we start a heavy fiber and don't do anything with the result
+      outcome <- fib.join
+    } yield outcome
 
     computation.flatMap {
       case Succeeded(fa) => fa
@@ -156,14 +156,14 @@ object Part7_Fibers extends IOApp.Simple {
   }
 
   def testEx3() = {
-    val aComputation = IO("starting").debug >> IO.sleep(1.second) >> IO("done!").debug >> IO(42)
+    val aComputation: IO[Int] = IO("starting").debug >> IO.sleep(1.second) >> IO("done!").debug >> IO(42)
     timeout(aComputation, 500.millis).debug.void
   }
 
   override def run =
   //testCancel().debug.void
   //testEx1()
-    testEx2()
-  //testEx3()
+  //testEx2()
+  testEx3()
 
 }
