@@ -27,14 +27,16 @@ object Part7_Fibers extends IOApp.Simple {
   def createFiber: Fiber[IO, Throwable, String] = ??? // almost impossible to create fibers manually
 
   def differentThreadIOs() = for {
-    fib <- ioInt.debug.start // IO[A].start returns IO[Fiber[IO, Throwable, A]] running on separate thread
+    fib <- ioInt.debug.start // IO[A].start is an effectful operation ...
+                            // ... it returns IO[Fiber[IO, Throwable, A]] running on separate thread
     _ <- ioStr.debug
   } yield ()
 
   // joining a fiber
   def runOnSomeOtherThread[A](io: IO[A]): IO[Outcome[IO, Throwable, A]] = for {
     fib <- io.start
-    outcome <- fib.join // Fiber[IO, Throwable, A].join returns IO[Outcome[IO, Throwable, A]] and we go back to main thread
+    outcome <- fib.join // Fiber[IO, Throwable, A].join is an effectful operation ...
+                        // ... it returns IO[Outcome[IO, Throwable, A]] and we go back to main thread
   } yield outcome
 
   /*
