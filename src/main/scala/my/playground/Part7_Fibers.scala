@@ -78,21 +78,21 @@ object Part7_Fibers extends IOApp.Simple {
    */
 
   def processResultsFromFiber[A](io: IO[A]): IO[A] = {
-    val ioResult = for {
-      fib <- io.debug.start
-      result <- fib.join
-    } yield result
+    val myOutcome = for{
+      fib <- io.start
+      outcome <- fib.join
+    } yield outcome
 
-    ioResult.flatMap {
-      case Succeeded(fa) => fa
-      case Errored(e) => IO.raiseError(e)
-      case Canceled() => IO.raiseError(new RuntimeException("Computation canceled."))
+    myOutcome flatMap {
+      case Succeeded(x) => x
+      case Canceled() => IO.raiseError(new RuntimeException("it's Canceled."))
+      case Errored(e) => IO.raiseError(new RuntimeException("it's Errored: "+ e.getMessage))
     }
   }
 
   def testEx1() = {
-    val aComputation = IO("starting").debug >> IO.sleep(1.second) >> IO("done!").debug >> IO(42)
-    processResultsFromFiber(aComputation).void
+//    val aComputation = IO("starting").debug >> IO.sleep(1.second) >> IO("done!").debug >> IO(42)
+//    processResultsFromFiber(aComputation).void
   }
 
   /**
