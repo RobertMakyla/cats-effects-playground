@@ -9,6 +9,24 @@ import scala.concurrent.duration._
 
 /**
  * FIBER - a basic class of IO concurrency - Incredibly lightweight
+ *
+ * FIBERS vs THREADS:
+ * Threads - are active entities, they can run code
+ * Fibers - are passive entities - a description of an effect - managed by Cats Effect runtime
+ *
+ * Cats Effects manages let's say at most 100 threads on 1 machine (more is too heavy) (measured by number of Threads per CPU)
+ * In the contrast we can have hundreds of millions of fibers (measured in GB of heap)
+ *
+ * What FIBERS give us:
+ * - no need to play with threads / locks
+ * - Cats Effects gives us Thread management for free
+ * - no Future.callbacks methods which are asynchronous and hard to control/predict/test
+ * - we stay in pure functional world
+ *
+ * advanced :
+ * - BLOCKING/SLEEPING an IO in a fiber is actually DESCHEDULING an effect from a thread (no JVM thread is ever blocked) - it is called SEMANTIC BLOCKING
+ * -a fiber can run on many JVM threads (eg. between sleeping)
+ *
  */
 object Part7_Fibers extends IOApp.Simple {
 
